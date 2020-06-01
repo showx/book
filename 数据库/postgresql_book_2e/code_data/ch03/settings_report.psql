@@ -1,0 +1,24 @@
+\o settings_report.html
+\T 'cellspacing=0 cellpadding=0'
+\qecho '<html><head><style>H2{color:maroon}</style>'
+\qecho '<title>PostgreSQL Settings</title></head><body>'
+\qecho '<table><tr valign=''top''><td><h2>Planner Settings</h2>'
+\x on
+\t on
+\pset format html
+SELECT category, string_agg(name || '=' || setting, E'\n' ORDER BY name) As settings 
+ FROM pg_settings 
+ WHERE category LIKE '%Planner%' GROUP BY category ORDER BY category;
+\H
+\qecho '</td><td><h2>File Locations</h2>'
+\x off
+\t on
+\pset format html
+SELECT name, setting 
+ FROM pg_settings 
+ WHERE category = 'File Locations' ORDER BY name;
+ \qecho '<h2>Memory Settings</h2>'
+ SELECT name, setting, unit 
+  FROM pg_settings WHERE category ILIKE '%memory%' ORDER BY name;
+\qecho '</td></tr></table>'
+\qecho '</body></html>'

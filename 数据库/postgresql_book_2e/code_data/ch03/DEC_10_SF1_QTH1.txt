@@ -1,0 +1,11 @@
+QT-H1
+General Housing Characteristics: 2010
+
+NOTE: For information on confidentiality protection, nonsampling error, and definitions, see  http://www.census.gov/prod/cen2010/doc/sf1.pdf.
+
+X Not applicable.
+
+Source: U.S. Census Bureau, 2010 Census.
+
+Summary File 1, Tables H3, H4, H5, and HCT1.
+

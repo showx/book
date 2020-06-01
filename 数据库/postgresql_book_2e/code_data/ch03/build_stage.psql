@@ -1,0 +1,8 @@
+\a
+\t
+SELECT 'CREATE TABLE staging.factfinder_import(geo_id varchar(255)
+ , geo_id2 varchar(255), geo_display varchar(255)
+ , '|| array_to_string(array_agg('s' || lpad(i::text,2, '0')
+ || ' varchar(255), s' || lpad(i::text,2, '0') || '_perc varchar(255) ' ), ',') || ');' As create_sql 
+FROM generate_series(1,51) As i \g create_script.sql
+\i create_script.sql 

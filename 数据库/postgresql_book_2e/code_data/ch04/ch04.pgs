@@ -1,0 +1,61 @@
+DECLARE @I, @labels, @tdef;
+SET @I = 0;
+--labels becomes a record variable because
+-- it is the target of a SELECT
+SET @labels = SELECT 
+	quote_ident(replace(
+		replace(
+			lower(
+				COALESCE(fact_subcats[4], fact_subcats[3])), ' ', '_'),':'
+				,'')) As col_name, fact_type_id 
+	FROM census.lu_fact_types
+	WHERE category = 'Population' AND fact_subcats[3] ILIKE 'Hispanic or Latino%'
+	ORDER BY short_name;
+SET @tdef = 'census.hisp_pop(tract_id varchar(11) PRIMARY KEY '; 
+-- you loop thru rows of a record variable 
+-- using LINES pgScript function
+WHILE @I < LINES(@labels)
+BEGIN
+	SET @tdef = @tdef + ', ' + @labels[@I][0] + ' numeric(12,3) '; 
+	SET @I = @I + 1;
+END
+SET @tdef = @tdef + ')';
+PRINT @tdef;
+CREATE TABLE IF NOT EXISTS @tdef;
+--now we will populate our table
+
+-- populate the table --
+DECLARE @I, @labels, @tload, @tcols, @fact_types;
+SET @I = 0;
+SET @labels = SELECT 
+	quote_ident(replace(
+		replace(
+			lower(
+				COALESCE(fact_subcats[4], fact_subcats[3])), ' ', '_'),':'
+				,'')) As col_name, fact_type_id 
+	FROM census.lu_fact_types
+	WHERE category = 'Population' AND fact_subcats[3] ILIKE 'Hispanic or Latino%'
+	ORDER BY short_name;
+SET @tload = 'tract_id'; 
+SET @tcols = 'tract_id';
+SET @fact_types = '-1';
+WHILE @I < LINES(@labels)
+BEGIN
+	SET @tcols = @tcols + ', ' + @labels[@I][0] ; 
+	SET @tload = @tload + ', MAX(CASE WHEN fact_type_id = ' + CAST(@labels[@I][1] AS STRING) + ' THEN val ELSE NULL END)' ; 
+	SET @fact_types = @fact_types + ', ' + CAST(@labels[@I][1] As STRING);
+	SET @I = @I + 1;
+END
+INSERT INTO census.hisp_pop(@tcols)
+ SELECT @tload 
+   FROM census.facts
+   WHERE fact_type_id IN(@fact_types) AND yr=2011
+   GROUP BY tract_id;
+
+-- graphical explain
+SELECT substring(tract_id, 1,5) As county_code, SUM(hp.hispanic_or_latino) As tot
+    , SUM(hp.white_alone) As tot_white
+    , SUM(COALESCE(hp.hispanic_or_latino,0) - COALESCE(hp.white_alone,0)) AS non_white
+    FROM census.hisp_pop AS hp
+     GROUP BY county_code
+     ORDER BY county_code;
